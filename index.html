@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Chaos Council</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #0f0f0f;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .chat-container {
+            display: flex;
+            height: 100vh;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* Left Sidebar - Members List */
+        .members-sidebar {
+            width: 280px;
+            background: #1a1a1a;
+            border-right: 1px solid #2a2a2a;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid #2a2a2a;
+        }
+
+        .sidebar-header h1 {
+            font-size: 20px;
+            color: #fff;
+            margin-bottom: 4px;
+        }
+
+        .sidebar-header p {
+            font-size: 13px;
+            color: #888;
+        }
+
+        .connection-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 12px;
+            font-size: 12px;
+            color: #888;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #888;
+        }
+
+        .status-dot.connected {
+            background: #00d26a;
+            box-shadow: 0 0 8px rgba(0, 210, 106, 0.5);
+        }
+
+        .members-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px;
+        }
+
+        .member-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 4px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .member-item:hover {
+            background: #252525;
+        }
+
+        .member-item.typing {
+            background: #252525;
+        }
+
+        .member-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+
+        .architect-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .warden-bg { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+        .assassin-bg { background: linear-gradient(135deg, #ff6b6b 0%, #c92a2a 100%); }
+        .prophet-bg { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); }
+        .judge-bg { background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); }
+
+        .member-details {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .member-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: #fff;
+            margin-bottom: 2px;
+        }
+
+        .member-status {
+            font-size: 12px;
+            color: #888;
+        }
+
+        .typing-indicator {
+            display: none;
+            font-size: 12px;
+            color: #00d26a;
+        }
+
+        .member-item.typing .typing-indicator {
+            display: block;
+        }
+
+        .member-item.typing .member-status {
+            display: none;
+        }
+
+        /* Main Chat Area */
+        .chat-main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #0f0f0f;
+        }
+
+        .chat-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid #2a2a2a;
+            background: #1a1a1a;
+        }
+
+        .chat-header h2 {
+            font-size: 18px;
+            color: #fff;
+            margin-bottom: 4px;
+        }
+
+        .chat-header p {
+            font-size: 13px;
+            color: #888;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* Message Styles */
+        .message-group {
+            display: flex;
+            gap: 12px;
+            animation: messageSlide 0.3s ease-out;
+        }
+
+        .message-group.user-message {
+            flex-direction: row-reverse;
+        }
+
+        @keyframes messageSlide {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .user-avatar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .message-content {
+            flex: 1;
+            max-width: 70%;
+        }
+
+        .user-message .message-content {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+        }
+
+        .message-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+
+        .user-message .message-header {
+            flex-direction: row-reverse;
+        }
+
+        .message-author {
+            font-size: 13px;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .message-time {
+            font-size: 11px;
+            color: #666;
+        }
+
+        .message-bubble {
+            padding: 12px 16px;
+            border-radius: 12px;
+            font-size: 14px;
+            line-height: 1.5;
+            word-wrap: break-word;
+        }
+
+        .council-message .message-bubble {
+            background: #1a1a1a;
+            color: #e0e0e0;
+            border: 1px solid #2a2a2a;
+        }
+
+        .user-message .message-bubble {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+        }
+
+        .system-message {
+            text-align: center;
+            padding: 8px 16px;
+            font-size: 13px;
+            color: #888;
+            background: #1a1a1a;
+            border-radius: 16px;
+            margin: 8px auto;
+            max-width: fit-content;
+        }
+
+        .attack-message {
+            border-left: 3px solid #ff6b6b !important;
+            background: #1a0f0f !important;
+        }
+
+        .defense-message {
+            border-left: 3px solid #00d26a !important;
+            background: #0f1a0f !important;
+        }
+
+        .verdict-message {
+            border-left: 3px solid #ffd700 !important;
+            background: #1a1a0f !important;
+        }
+
+        .typing-dots {
+            display: inline-flex;
+            gap: 4px;
+            padding: 12px 16px;
+            background: #1a1a1a;
+            border: 1px solid #2a2a2a;
+            border-radius: 12px;
+        }
+
+        .typing-dots span {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #666;
+            animation: typingBounce 1.4s infinite ease-in-out both;
+        }
+
+        .typing-dots span:nth-child(1) { animation-delay: -0.32s; }
+        .typing-dots span:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes typingBounce {
+            0%, 80%, 100% { transform: scale(0); opacity: 0.5; }
+            40% { transform: scale(1); opacity: 1; }
+        }
+
+        .confidence-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-top: 6px;
+            background: rgba(0, 210, 106, 0.1);
+            color: #00d26a;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-top: 6px;
+        }
+
+        .status-intact {
+            background: rgba(0, 210, 106, 0.1);
+            color: #00d26a;
+        }
+
+        .status-weakened {
+            background: rgba(255, 193, 7, 0.1);
+            color: #ffc107;
+        }
+
+        .status-failed {
+            background: rgba(255, 107, 107, 0.1);
+            color: #ff6b6b;
+        }
+
+        /* Input Area */
+        .chat-input-area {
+            padding: 20px 24px;
+            background: #1a1a1a;
+            border-top: 1px solid #2a2a2a;
+        }
+
+        .input-wrapper {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            background: #0f0f0f;
+            border: 1px solid #2a2a2a;
+            border-radius: 24px;
+            padding: 8px 16px;
+            transition: border-color 0.2s;
+        }
+
+        .input-wrapper:focus-within {
+            border-color: #667eea;
+        }
+
+        .chat-input {
+            flex: 1;
+            background: none;
+            border: none;
+            outline: none;
+            color: #fff;
+            font-size: 14px;
+            padding: 8px;
+        }
+
+        .chat-input::placeholder {
+            color: #666;
+        }
+
+        .send-button {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .send-button:hover:not(:disabled) {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .send-button:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .send-button svg {
+            width: 18px;
+            height: 18px;
+            fill: white;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #1a1a1a;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #2a2a2a;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #3a3a3a;
+        }
+
+        .round-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            background: rgba(102, 126, 234, 0.1);
+            color: #667eea;
+            margin-left: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <!-- Left Sidebar -->
+        <div class="members-sidebar">
+            <div class="sidebar-header">
+                <h1>⚔️ Chaos Council</h1>
+                <p>Where ideas go to battle</p>
+                <div class="connection-indicator">
+                    <span class="status-dot" id="statusDot"></span>
+                    <span id="statusText">Connecting...</span>
+                </div>
+            </div>
+            <div class="members-list">
+                <div class="member-item" id="member-architect">
+                    <div class="member-avatar architect-bg">🏗️</div>
+                    <div class="member-details">
+                        <div class="member-name">The Architect</div>
+                        <div class="member-status">Ready</div>
+                        <div class="typing-indicator">thinking...</div>
+                    </div>
+                </div>
+                <div class="member-item" id="member-warden">
+                    <div class="member-avatar warden-bg">🛡️</div>
+                    <div class="member-details">
+                        <div class="member-name">The Warden</div>
+                        <div class="member-status">Ready</div>
+                        <div class="typing-indicator">enforcing...</div>
+                    </div>
+                </div>
+                <div class="member-item" id="member-assassin">
+                    <div class="member-avatar assassin-bg">🗡️</div>
+                    <div class="member-details">
+                        <div class="member-name">The Assassin</div>
+                        <div class="member-status">Ready</div>
+                        <div class="typing-indicator">attacking...</div>
+                    </div>
+                </div>
+                <div class="member-item" id="member-prophet">
+                    <div class="member-avatar prophet-bg">🔮</div>
+                    <div class="member-details">
+                        <div class="member-name">The Prophet</div>
+                        <div class="member-status">Ready</div>
+                        <div class="typing-indicator">foreseeing...</div>
+                    </div>
+                </div>
+                <div class="member-item" id="member-judge">
+                    <div class="member-avatar judge-bg">⚖️</div>
+                    <div class="member-details">
+                        <div class="member-name">The Judge</div>
+                        <div class="member-status">Ready</div>
+                        <div class="typing-indicator">judging...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Chat -->
+        <div class="chat-main">
+            <div class="chat-header">
+                <h2>Council Chamber</h2>
+                <p>Ask anything and watch the chaos unfold</p>
+            </div>
+            <div class="chat-messages" id="chatMessages">
+                <div class="system-message">
+                    ⚔️ Welcome to the Chaos Council! Ask a question and watch as ideas battle for supremacy.
+                </div>
+            </div>
+            <div class="chat-input-area">
+                <div class="input-wrapper">
+                    <input 
+                        type="text" 
+                        class="chat-input" 
+                        id="userInput"
+                        placeholder="Ask your question..."
+                        onkeypress="if(event.key === 'Enter') sendMessage()"
+                    >
+                    <button class="send-button" id="sendBtn" onclick="sendMessage()">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let ws = null;
+        let isProcessing = false;
+
+        const memberInfo = {
+            'architect': { name: 'The Architect', emoji: '🏗️', class: 'architect-bg' },
+            'warden': { name: 'The Warden', emoji: '🛡️', class: 'warden-bg' },
+            'assassin': { name: 'The Assassin', emoji: '🗡️', class: 'assassin-bg' },
+            'prophet': { name: 'The Prophet', emoji: '🔮', class: 'prophet-bg' },
+            'judge': { name: 'The Judge', emoji: '⚖️', class: 'judge-bg' }
+        };
+
+        function connectWebSocket() {
+            ws = new WebSocket('ws://127.0.0.1:8000/ws');
+            
+            ws.onopen = () => {
+                console.log('WebSocket connected');
+                document.getElementById('statusDot').classList.add('connected');
+                document.getElementById('statusText').textContent = 'Connected';
+            };
+            
+            ws.onclose = () => {
+                console.log('WebSocket disconnected');
+                document.getElementById('statusDot').classList.remove('connected');
+                document.getElementById('statusText').textContent = 'Disconnected';
+                addSystemMessage('Connection lost. Please refresh the page.');
+            };
+            
+            ws.onerror = (error) => {
+                console.error('WebSocket error:', error);
+                addSystemMessage('Connection error. Make sure the backend is running.');
+            };
+            
+            ws.onmessage = (event) => {
+                const message = JSON.parse(event.data);
+                handleWebSocketMessage(message);
+            };
+        }
+
+        function handleWebSocketMessage(message) {
+            const { type, data } = message;
+            
+            switch(type) {
+                case 'round_start':
+                    handleRoundStart(data);
+                    break;
+                    
+                case 'member_thinking':
+                    setMemberTyping(data.role, true);
+                    break;
+                    
+                case 'member_response':
+                    setMemberTyping(data.role, false);
+                    addCouncilMessage(data.role, data.content, data.confidence, 'response');
+                    break;
+
+                case 'attack':
+                    setMemberTyping(data.attacker, false);
+                    const attackContent = `🗡️ <strong>Attacking ${data.target_name}:</strong><br><br>${data.attack}`;
+                    addCouncilMessage(data.attacker, attackContent, data.confidence, 'attack');
+                    break;
+
+                case 'defense':
+                    setMemberTyping(data.defender, false);
+                    const defenseContent = `🛡️ <strong>Defense:</strong><br><br>${data.defense}`;
+                    addCouncilMessage(data.defender, defenseContent, data.revised_confidence, 'defense', data.status);
+                    break;
+
+                case 'final_attack':
+                    setMemberTyping('assassin', false);
+                    const finalAttackContent = `⚔️ <strong>Final Kill Attempt:</strong><br><br>${data.content}`;
+                    addCouncilMessage('assassin', finalAttackContent, null, 'attack');
+                    break;
+                    
+                case 'final_verdict':
+                    setMemberTyping('judge', false);
+                    addFinalVerdict(data);
+                    break;
+                    
+                case 'complete':
+                    isProcessing = false;
+                    document.getElementById('sendBtn').disabled = false;
+                    addSystemMessage('⚔️ Battle concluded!');
+                    break;
+                    
+                case 'member_error':
+                    setMemberTyping(data.role, false);
+                    console.error('Member error:', data.error);
+                    break;
+            }
+        }
+
+        function handleRoundStart(data) {
+            const messages = {
+                0: '💭 Round 0: Independent Positions - No Collaboration',
+                1: '⚔️ Round 1: Adversarial Attacks - No Mercy',
+                2: '🛡️ Round 2: Defense Under Fire - No Rewrites',
+                3: '⚖️ Round 3: Final Judgment - No Consensus'
+            };
+            
+            if (messages[data.round]) {
+                addSystemMessage(messages[data.round]);
+            }
+        }
+
+        function setMemberTyping(role, isTyping) {
+            const memberElement = document.getElementById(`member-${role}`);
+            if (memberElement) {
+                if (isTyping) {
+                    memberElement.classList.add('typing');
+                    addTypingIndicator(role);
+                } else {
+                    memberElement.classList.remove('typing');
+                    removeTypingIndicator(role);
+                }
+            }
+        }
+
+        function addTypingIndicator(role) {
+            const existingIndicator = document.getElementById(`typing-${role}`);
+            if (existingIndicator) return;
+
+            const info = memberInfo[role];
+            const messagesDiv = document.getElementById('chatMessages');
+            
+            const messageGroup = document.createElement('div');
+            messageGroup.className = 'message-group council-message';
+            messageGroup.id = `typing-${role}`;
+            
+            messageGroup.innerHTML = `
+                <div class="message-avatar ${info.class}">${info.emoji}</div>
+                <div class="message-content">
+                    <div class="message-header">
+                        <span class="message-author">${info.name}</span>
+                    </div>
+                    <div class="typing-dots">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+                </div>
+            `;
+            
+            messagesDiv.appendChild(messageGroup);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function removeTypingIndicator(role) {
+            const indicator = document.getElementById(`typing-${role}`);
+            if (indicator) {
+                indicator.remove();
+            }
+        }
+
+        function addCouncilMessage(role, content, confidence, messageType = 'response', status = null) {
+            removeTypingIndicator(role);
+            
+            const info = memberInfo[role];
+            const messagesDiv = document.getElementById('chatMessages');
+            const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            
+            const messageGroup = document.createElement('div');
+            messageGroup.className = 'message-group council-message';
+            
+            let confidenceBadge = '';
+            if (confidence && confidence > 0) {
+                confidenceBadge = `<span class="confidence-badge">${confidence}% confident</span>`;
+            }
+
+            let statusBadge = '';
+            if (status) {
+                const statusClass = `status-${status}`;
+                const statusText = status.charAt(0).toUpperCase() + status.slice(1);
+                statusBadge = `<span class="status-badge ${statusClass}">${statusText}</span>`;
+            }
+
+            let bubbleClass = 'message-bubble';
+            if (messageType === 'attack') {
+                bubbleClass += ' attack-message';
+            } else if (messageType === 'defense') {
+                bubbleClass += ' defense-message';
+            } else if (messageType === 'verdict') {
+                bubbleClass += ' verdict-message';
+            }
+            
+            messageGroup.innerHTML = `
+                <div class="message-avatar ${info.class}">${info.emoji}</div>
+                <div class="message-content">
+                    <div class="message-header">
+                        <span class="message-author">${info.name}</span>
+                        <span class="message-time">${time}</span>
+                    </div>
+                    <div class="${bubbleClass}">
+                        ${content}
+                        ${confidenceBadge}
+                        ${statusBadge}
+                    </div>
+                </div>
+            `;
+            
+            messagesDiv.appendChild(messageGroup);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function addUserMessage(content) {
+            const messagesDiv = document.getElementById('chatMessages');
+            const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            
+            const messageGroup = document.createElement('div');
+            messageGroup.className = 'message-group user-message';
+            
+            messageGroup.innerHTML = `
+                <div class="message-avatar user-avatar">👤</div>
+                <div class="message-content">
+                    <div class="message-header">
+                        <span class="message-author">You</span>
+                        <span class="message-time">${time}</span>
+                    </div>
+                    <div class="message-bubble">${content}</div>
+                </div>
+            `;
+            
+            messagesDiv.appendChild(messageGroup);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function addSystemMessage(content) {
+            const messagesDiv = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'system-message';
+            messageDiv.textContent = content;
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function addFinalVerdict(data) {
+            let content = `⚖️ <strong>FINAL VERDICT</strong><br><br>`;
+            
+            if (data.winner !== 'none') {
+                const winnerInfo = memberInfo[data.winner];
+                content += `<strong>👑 WINNER: ${winnerInfo.name}</strong><br>${data.winner_reasoning}<br><br>`;
+            } else {
+                content += `<strong>❌ NO WINNER DECLARED</strong><br><br>`;
+            }
+
+            content += `<strong>📋 Final Answer:</strong><br>${data.final_answer}<br><br>`;
+
+            if (data.losers && data.losers.length > 0) {
+                content += `<strong>💀 Defeated Positions:</strong><br>`;
+                data.losers.forEach(loser => {
+                    const loserInfo = memberInfo[loser];
+                    const reason = data.loser_reasoning[loser] || 'Position failed';
+                    content += `• ${loserInfo.name}: ${reason}<br>`;
+                });
+                content += '<br>';
+            }
+
+            if (data.unresolved_unknowns && data.unresolved_unknowns.length > 0) {
+                content += `<strong>❓ Still Unknown:</strong><br>`;
+                data.unresolved_unknowns.forEach(u => content += `• ${u}<br>`);
+                content += '<br>';
+            }
+
+            if (data.failure_modes && data.failure_modes.length > 0) {
+                content += `<strong>⚠️ When This Fails:</strong><br>`;
+                data.failure_modes.forEach(f => content += `• ${f}<br>`);
+            }
+            
+            addCouncilMessage('judge', content, data.confidence, 'verdict');
+        }
+
+        function sendMessage() {
+            if (isProcessing || !ws || ws.readyState !== WebSocket.OPEN) {
+                addSystemMessage('⚠️ Please wait for connection or current battle to complete');
+                return;
+            }
+            
+            const input = document.getElementById('userInput');
+            const question = input.value.trim();
+            
+            if (!question) return;
+            
+            addUserMessage(question);
+            input.value = '';
+            
+            isProcessing = true;
+            document.getElementById('sendBtn').disabled = true;
+            
+            ws.send(JSON.stringify({ question }));
+        }
+
+        window.onload = () => {
+            connectWebSocket();
+            document.getElementById('userInput').focus();
+        };
+    </script>
+</body>
+</html>
