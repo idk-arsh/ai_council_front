@@ -547,7 +547,7 @@
         };
 
         function connectWebSocket() {
-            ws = new WebSocket('ws://127.0.0.1:8000/ws');
+            ws = new WebSocket('wss://ai-council-backend-1.onrender.com/ws');
             
             ws.onopen = () => {
                 console.log('WebSocket connected');
@@ -831,4 +831,5 @@
         };
     </script>
 </body>
+
 </html>
